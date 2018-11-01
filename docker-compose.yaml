@@ -1,0 +1,89 @@
+version: "3.2"
+services:
+  ccnet:
+    build: ./seafile_dev_docker
+    image: seafile:dev
+    expose:
+      - 13419
+    depends_on:
+      - db
+    command:
+        - dockerize
+        - -timeout
+        - '20s'
+        - -wait
+        - tcp://db:3306
+        - /opt/seafile/seafile-server-latest/seafile/bin/ccnet-server
+        - -F
+        - /opt/seafile/conf
+        - -c
+        - /opt/seafile/ccnet
+        - -f
+        - /opt/seafile/logs/ccnet.log
+        - -P
+        - /opt/seafile/pids/ccnet.pid
+    volumes:
+      - "sockets:/opt/seafile/sockets"
+      - tmp:/tmp
+  seafile-server:
+    ports:
+      - 8082:8082
+    image: seafile:dev
+    depends_on:
+      - ccnet
+    command:
+      - dockerize
+      - -wait
+      - tcp://db:3306
+      - -wait
+      - unix:///opt/seafile/sockets/ccnet.sock
+      - -timeout
+      - '20s'
+      - -stdout
+      - /opt/seafile/logs/seafile.log
+      - /opt/seafile/seafile-server-latest/seafile/bin/seaf-server
+      - -F
+      - /opt/seafile/conf
+      - -c
+      - /opt/seafile/ccnet
+      - -d
+      - /opt/seafile/data
+      - -l
+      - /opt/seafile/logs/seafile.log
+      - -P
+      - /opt/seafile/pids/seaf-server.pid
+      - -f
+    volumes:
+      - "sockets:/opt/seafile/sockets"
+      - tmp:/tmp
+  seahub:
+    ports:
+      - 8000:8000
+    image: seafile:dev
+    depends_on:
+      - seafile-server
+    environment:
+      SEAHUB_LOG_DIR: /opt/seafile/logs/
+    command:
+      - dockerize
+      - -wait
+      - tcp://seafile-server:8082
+      - -timeout
+      - '20s'
+      - -stderr
+      - /opt/seafile/logs/seahub.log
+      - /bin/bash
+      - /opt/seafile/start-seahub.sh
+    volumes:
+      - "sockets:/opt/seafile/sockets"
+      - tmp:/tmp
+  db:
+    image: mysql:5
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 1
+      MYSQL_USER: seafile
+    volumes:
+      - ./mysql/setup/:/docker-entrypoint-initdb.d:z
+volumes:
+  sockets:
+  tmp:

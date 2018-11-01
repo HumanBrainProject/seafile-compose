@@ -1,0 +1,6 @@
+version: "3.2"
+services:
+  seahub:
+    volumes:
+      - ./overrides/scripts/start-seahub.sh:/opt/seafile/start-seahub.sh:z
+      - ./seahub:/opt/seafile/seafile-server-latest/seahub:z
