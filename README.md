@@ -26,6 +26,10 @@ docker-compose \
 This will get you the upstream vanilla version of Seafile listening on http://localhost:8000,
 with no customizations.
 
+### Create a superuser
+
+`docker-compose exec seahub python /opt/seafile/seafile-server-latest/seahub/manage.py createsuperuser`
+
 ## Run local copy of Seahub with ipdb
 
 Put a Seahub version into the local folder `seahub` (symlink or copy), it will be
